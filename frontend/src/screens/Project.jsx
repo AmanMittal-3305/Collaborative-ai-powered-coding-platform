@@ -113,6 +113,16 @@ const Project = () => {
             </div>)
     }
 
+    function isJsonString(str) {
+        try {
+            JSON.parse(str);
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+    
+
     useEffect(() => {
 
         initializeSocket(project._id)
@@ -126,21 +136,20 @@ const Project = () => {
 
 
         receiveMessage('project-message', data => {
-            console.log(data)
+            console.log(data);
         
-            try {
-                const parsed = JSON.parse(data.message)
+            if (isJsonString(data.message)) {
+                const parsed = JSON.parse(data.message);
         
                 if (parsed?.fileTree && typeof parsed.fileTree === 'object') {
-                    webContainer?.mount(parsed.fileTree)
-                    setFileTree(parsed.fileTree)
+                    webContainer?.mount(parsed.fileTree);
+                    setFileTree(parsed.fileTree);
                 }
-        
-                setMessages(prevMessages => [...prevMessages, data])
-            } catch (err) {
-                console.error("Failed to parse message or invalid fileTree:", err)
             }
-        })
+        
+            setMessages(prevMessages => [...prevMessages, data]);
+        });
+        
         
 
         axios.get(`/projects/get-project/${location.state.project._id}`).then(res => {

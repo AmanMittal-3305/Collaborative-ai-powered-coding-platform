@@ -95,7 +95,10 @@ const model = genAI.getGenerativeModel({
        
        </example>
     
- IMPORTANT : don't use file name like routes/index.js
+ IMPORTANT: Do not use nested file paths like routes/index.js — all files should be at the root level with no folders.
+ IMPORTANT: Do not create any folders.
+ IMPORTANT: Only include files that have proper file extensions (e.g., .js, .json, .java, .cpp, .c, .html, .css, .jsx). Do not include files without extensions.
+
        
        
     `
