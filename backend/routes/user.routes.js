@@ -5,9 +5,6 @@ import * as authMiddleware from '../middleware/auth.middleware.js';
 
 const router = Router();
 
-console.log('UserController:', userController);
-
-
 
 
 router.post('/register',

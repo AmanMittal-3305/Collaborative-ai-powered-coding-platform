@@ -5,6 +5,7 @@ import { validationResult } from 'express-validator';
 
 
 export const createProject = async (req, res) => {
+
     const errors = validationResult(req);
 
     if (!errors.isEmpty()) {
@@ -12,23 +13,23 @@ export const createProject = async (req, res) => {
     }
 
     try {
+
         const { name } = req.body;
         const loggedInUser = await userModel.findOne({ email: req.user.email });
         const userId = loggedInUser._id;
 
         const newProject = await projectService.createProject({ name, userId });
 
-        return res.status(201).json({
-            message: "Project created successfully",
-            project: newProject // ✅ now frontend gets it as res.data.project
-        });
+        res.status(201).json(newProject);
 
     } catch (err) {
         console.log(err);
         res.status(400).send(err.message);
     }
-}
 
+
+
+}
 
 export const getAllProject = async (req, res) => {
     try {

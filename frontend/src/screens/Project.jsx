@@ -5,7 +5,7 @@ import axios from '../config/axios'
 import { initializeSocket, receiveMessage, sendMessage } from '../config/socket'
 import Markdown from 'markdown-to-jsx'
 import hljs from 'highlight.js';
-import { getWebContainer } from '../config/webContainer'
+import { getWebContainer } from '../config/webcontainer'
 
 
 function SyntaxHighlightedCode(props) {
@@ -45,10 +45,6 @@ const Project = () => {
 
     const [ webContainer, setWebContainer ] = useState(null)
     const [ iframeUrl, setIframeUrl ] = useState(null)
-
-    const [popupMessage, setPopupMessage] = useState(null)
-    const [isStarting, setIsStarting] = useState(false)
-
 
     const [ runProcess, setRunProcess ] = useState(null)
 
@@ -113,16 +109,6 @@ const Project = () => {
             </div>)
     }
 
-    function isJsonString(str) {
-        try {
-            JSON.parse(str);
-            return true;
-        } catch (e) {
-            return false;
-        }
-    }
-    
-
     useEffect(() => {
 
         initializeSocket(project._id)
@@ -136,21 +122,29 @@ const Project = () => {
 
 
         receiveMessage('project-message', data => {
-            console.log(data);
-        
-            if (isJsonString(data.message)) {
-                const parsed = JSON.parse(data.message);
-        
-                if (parsed?.fileTree && typeof parsed.fileTree === 'object') {
-                    webContainer?.mount(parsed.fileTree);
-                    setFileTree(parsed.fileTree);
+
+            console.log(data)
+            
+            if (data.sender._id == 'ai') {
+
+
+                const message = JSON.parse(data.message)
+
+                console.log(message)
+
+                webContainer?.mount(message.fileTree)
+
+                if (message.fileTree) {
+                    setFileTree(message.fileTree || {})
                 }
+                setMessages(prevMessages => [ ...prevMessages, data ]) // Update messages state
+            } else {
+
+
+                setMessages(prevMessages => [ ...prevMessages, data ]) // Update messages state
             }
-        
-            setMessages(prevMessages => [...prevMessages, data]);
-        });
-        
-        
+        })
+
 
         axios.get(`/projects/get-project/${location.state.project._id}`).then(res => {
 
@@ -306,43 +300,39 @@ const Project = () => {
                         <div className="actions flex gap-2">
                             <button
                                 onClick={async () => {
-                                    if (!webContainer || !fileTree || Object.keys(fileTree).length === 0) {
-                                        alert("WebContainer not ready or file tree is empty.")
-                                        return
-                                    }
-
-                                    setIsStarting(true)
-                                
                                     await webContainer.mount(fileTree)
-                                
-                                    const installProcess = await webContainer.spawn("npm", ["install"])
+
+
+                                    const installProcess = await webContainer.spawn("npm", [ "install" ])
+
+
+
                                     installProcess.output.pipeTo(new WritableStream({
                                         write(chunk) {
                                             console.log(chunk)
                                         }
                                     }))
-                                
-                                    if (runProcess) runProcess.kill()
-                                
-                                    const tempRunProcess = await webContainer.spawn("npm", ["start"])
+
+                                    if (runProcess) {
+                                        runProcess.kill()
+                                    }
+
+                                    let tempRunProcess = await webContainer.spawn("npm", [ "start" ]);
+
                                     tempRunProcess.output.pipeTo(new WritableStream({
                                         write(chunk) {
                                             console.log(chunk)
                                         }
                                     }))
-                                    setRunProcess(tempRunProcess)
-                                
-                                    webContainer.on('server-ready', (port, url) => {
-                                        setIsStarting(false)
-                                        setPopupMessage(`Server is ready at ${url}`)
-                                        setIframeUrl(url)
 
-                                        setTimeout(() => {
-                                            setPopupMessage(null)
-                                        }, 5000)    
+                                    setRunProcess(tempRunProcess)
+
+                                    webContainer.on('server-ready', (port, url) => {
+                                        console.log(port, url)
+                                        setIframeUrl(url)
                                     })
+
                                 }}
-                                
                                 className='p-2 px-4 bg-slate-300 text-white'
                             >
                                 run
